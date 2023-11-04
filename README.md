@@ -19,7 +19,7 @@
 - [ ] Implement algorithm
   - [x] Implement general algorithm (Bolinger band, inverse logic) [0.1.0]
   - [ ] Finalize order size calculation
-  - [ ] Implement stop loss / take profit algorithm
+  - [ ] Implement stop loss / take profit / order cancel algorithm
 - [ ] Select target stock / period
 - [ ] Run simulation: trial & error
 - [ ] Find best-profit parameter value

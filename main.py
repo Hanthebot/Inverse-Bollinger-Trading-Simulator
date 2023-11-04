@@ -7,7 +7,8 @@ from strategy import sample_strategy
 if __name__ == '__main__':
     # initialize driver & add strategy
     cerebro = bt.Cerebro()
-    cerebro.addstrategy(sample_strategy)
+    custom_params = {}
+    cerebro.addstrategy(sample_strategy, custom_params)
     
     datapath = './data/MSFT_2020-01-01_2023-06-30.csv'
     # Create a Data Feed

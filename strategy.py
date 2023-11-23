@@ -1,4 +1,5 @@
 import backtrader as bt
+import datetime
 
 class strategy_basic(bt.Strategy):
     def log(self, txt, dt=None):
@@ -39,9 +40,8 @@ class inverse_bollinger(strategy_basic):
         ("period", 20),
         ("inner_devfactor", 0.5),
         ("outer_devfactor", 2.0),
-        ("debug", False),
-        ("order_size", 25),
-        ("hodl_period", 10)
+        ("order_ratio", 0.10),
+        ("wait_period", 5)
     )
     def __init__(self, params = None):
         # ref: https://stackoverflow.com/questions/72273407/can-you-add-parameters-to-backtrader-strategy
@@ -52,7 +52,6 @@ class inverse_bollinger(strategy_basic):
         self.dataclose = self.datas[0].close
         # To keep track of pending orders
         self.order = None
-        self.order_ratio = 0.10 # in percentage of total portfolio value
         self.boll_in = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.inner_devfactor, plot=True)
         # for view purpose only
         self.boll_out = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.outer_devfactor, plot=True)
@@ -72,7 +71,7 @@ class inverse_bollinger(strategy_basic):
             price = self.boll_in.lines.top[0]
             # order smaller between: all cash available and a portion of total portfolio value
             cash_size = int(self.broker.getcash() / price) 
-            portion_portforlio = int(self.broker.getvalue() * self.order_ratio / price)
+            portion_portforlio = int(self.broker.getvalue() * self.p.order_ratio / price)
             size = min(cash_size, portion_portforlio)
             self.log('BUY CREATE, %.2f, %d' % (price, size))
             if size != 0:
@@ -86,7 +85,7 @@ class inverse_bollinger(strategy_basic):
             # Keep track of the created order to avoid a 2nd order
             # order smaller between: all position available and a portion of total portfolio value
             pos_size = self.position.size
-            portion_portforlio = int(self.broker.getvalue() * self.order_ratio / price)
+            portion_portforlio = int(self.broker.getvalue() * self.p.order_ratio / price)
             size = min(pos_size, portion_portforlio)
             self.log('SELL CREATE, %.2f, %d' % (price, size))
             if size != 0:
@@ -97,9 +96,8 @@ class bollinger(strategy_basic):
         ("period", 20),
         ("inner_devfactor", 0.5),
         ("outer_devfactor", 2.0),
-        ("debug", False),
-        ("order_size", 25),
-        ("hodl_period", 10)
+        ("order_ratio", 0.10),
+        ("wait_period", 5)
     )
     def __init__(self, params = None):
         # ref: https://stackoverflow.com/questions/72273407/can-you-add-parameters-to-backtrader-strategy
@@ -110,7 +108,6 @@ class bollinger(strategy_basic):
         self.dataclose = self.datas[0].close
         # To keep track of pending orders
         self.order = None
-        self.order_ratio = 0.10 # in percentage of total portfolio value
         self.boll_in = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.inner_devfactor, plot=True)
         # for view purpose only
         self.boll_out = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.outer_devfactor, plot=True)
@@ -131,7 +128,7 @@ class bollinger(strategy_basic):
             price = self.boll_in.lines.bot[0]
             # order smaller between: all cash available and a portion of total portfolio value
             cash_size = int(self.broker.getcash() / price) 
-            portion_portforlio = int(self.broker.getvalue() * self.order_ratio / price)
+            portion_portforlio = int(self.broker.getvalue() * self.p.order_ratio / price)
             size = min(cash_size, portion_portforlio)
             if size != 0:
                 self.order = self.buy(price = price, size = size)
@@ -144,10 +141,59 @@ class bollinger(strategy_basic):
             # Keep track of the created order to avoid a 2nd order
             # order smaller between: all position available and a portion of total portfolio value
             pos_size = self.position.size
-            portion_portforlio = int(self.broker.getvalue() * self.order_ratio / price)
+            portion_portforlio = int(self.broker.getvalue() * self.p.order_ratio / price)
             size = min(pos_size, portion_portforlio)
             if size != 0:
                 self.order = self.sell(price = price, size = size)
+
+class sma(strategy_basic):
+    params = (
+        ("period", 20),
+        ("wait_period", 5),
+        ("order_ratio", 0.10)
+    )
+    def __init__(self, params = None):
+        # ref: https://stackoverflow.com/questions/72273407/can-you-add-parameters-to-backtrader-strategy
+        if params != None:
+            for name, val in params.items():
+                setattr(self.params, name, val)
+        # self.datas: feed to the strategy
+        self.dataclose = self.datas[0].close
+        # To keep track of pending orders
+        self.order = None
+        self.sma = bt.indicators.SMA(period=self.p.period)
+        self.sell_signal = bt.indicators.CrossOver(self.data.close, self.sma)
+        self.buy_signal = bt.indicators.CrossDown(self.data.close, self.sma)
+
+    def next(self):
+        #self.log('Close, %.2f' % self.dataclose[0])
+        if self.order: # there is an open order
+            return
+        # Check if we are in the market
+        #if not self.position.size: # not in position! can buy!
+        if self.buy_signal:
+            self.log('BUY CREATE, %.2f' % self.dataclose[0])
+            # Keep track of the created order to avoid a 2nd order
+            price = self.dataclose[0]
+            # order smaller between: all cash available and a portion of total portfolio value
+            cash_size = int(self.broker.getcash() / price) 
+            portion_portforlio = int(self.broker.getvalue() * self.p.order_ratio / price)
+            size = min(cash_size, portion_portforlio)
+            if size != 0:
+                self.order = self.buy(price = price, size = size, valid=datetime.datetime.now() + datetime.timedelta(days=self.p.wait_period))
+
+        elif self.sell_signal:
+            # SELL, SELL, SELL!!! (with all possible default parameters)
+            self.log('SELL CREATE, %.2f' % self.dataclose[0])
+            price = self.dataclose[0]
+            #size = int(self.broker.getcash() / price)
+            # Keep track of the created order to avoid a 2nd order
+            # order smaller between: all position available and a portion of total portfolio value
+            pos_size = self.position.size
+            portion_portforlio = int(self.broker.getvalue() * self.p.order_ratio / price)
+            size = min(pos_size, portion_portforlio)
+            if size != 0:
+                self.order = self.sell(price = price, size = size, valid=datetime.datetime.now() + datetime.timedelta(days=self.p.wait_period))
 
 class hodl_long(strategy_basic):
     def __init__(self, params = None):

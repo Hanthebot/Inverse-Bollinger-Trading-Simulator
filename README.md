@@ -7,7 +7,7 @@
  We have hypothesized that biotech stocks, under certain events, will not mean-revert due to their volatile nature. Thus, we will use this simulator to test our model in such cases - to be described further.
 
 ## Getting started
- * ticker_crawler.py: contains `ticker_crawler` and 'crawl_all' function used to crawl historical data, uses `yfinance` module
+ * ticker_crawler.py: contains `ticker_crawler` and `crawl_all` function used to crawl historical data, uses `yfinance` module
  * strategy.py: contains strategy (SMA, Bollinger, inverse Bollinger)
  * main.py: uses `backtrader` module to test strategy
 

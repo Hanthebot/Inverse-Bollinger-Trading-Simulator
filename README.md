@@ -7,8 +7,8 @@
  We have hypothesized that biotech stocks, under certain events, will not mean-revert due to their volatile nature. Thus, we will use this simulator to test our model in such cases - to be described further.
 
 ## Getting started
- * ticker_crawler.py: contains `ticker_crawler` function used to crawl historical data, uses `yfinance` module
- * strategy.py: contains strategy
+ * ticker_crawler.py: contains `ticker_crawler` and 'crawl_all' function used to crawl historical data, uses `yfinance` module
+ * strategy.py: contains strategy (SMA, Bollinger, inverse Bollinger)
  * main.py: uses `backtrader` module to test strategy
 
 ![snapshot](https://github.com/Hanthebot/Inverse-Bollinger-Trading-Simulator/blob/main/data/snapshot_0_1_0.jpg?raw=true)
@@ -18,10 +18,10 @@
 - [x] Build general outline [0.0.1]
 - [ ] Implement algorithm
   - [x] Implement general algorithm (Bolinger band, inverse logic) [0.1.0]
-  - [x] Finalize order size calculation
+  - [x] Finalize order size calculation [0.2.0]
   - [ ] Implement stop loss / take profit / order cancel algorithm
-- [x] Select target stock / period
-- [x] Run simulation: trial & error
+- [x] Select target stock / period [0.1.2]
+- [x] Run simulation: trial & error [0.2.0 ~]
 - [ ] Find best-profit parameter value
 - [ ] Tabulate all information needed for the report
 
@@ -39,3 +39,4 @@
  6. https://aplab.tistory.com/entry/%ED%8C%8C%EC%9D%B4%EC%8D%AC-%EC%A3%BC%EC%8B%9D-%EB%B0%B1%ED%85%8C%EC%8A%A4%ED%8A%B8
  7. https://algotrading101.com/learn/yfinance-guide/
  8. https://community.backtrader.com/topic/3979/help-with-yahoofinance-data
+ 9. https://www.backtrader.com/docu/order-creation-execution/order-creation-execution/

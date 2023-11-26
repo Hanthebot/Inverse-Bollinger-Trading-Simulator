@@ -16,10 +16,10 @@
 
 ## Roadmap
 - [x] Build general outline [0.0.1]
-- [ ] Implement algorithm
+- [x] Implement algorithm
   - [x] Implement general algorithm (Bolinger band, inverse logic) [0.1.0]
   - [x] Finalize order size calculation [0.2.0]
-  - [ ] Implement stop loss / take profit / order cancel algorithm
+  - [ ] ~~Implement stop loss / take profit / order cancel algorithm~~
 - [x] Select target stock / period [0.1.2]
 - [x] Run simulation: trial & error [0.2.0 ~]
 - [ ] Find best-profit parameter value

@@ -1,4 +1,6 @@
 venv/
 __pycache__/
 dump/
+imgs/
+imgs2/
 *.csv

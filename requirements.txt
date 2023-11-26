@@ -2,3 +2,6 @@ backtrader>=1.9.78.123
 yfinance>=0.2.31
 matplotlib>=3.8.0
 scipy
+re
+csv
+glob

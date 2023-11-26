@@ -4,6 +4,9 @@ import csv
 import re
 import backtrader as bt
 from scipy import stats
+import matplotlib.pyplot as pl
+pl.style.use("default") #ggplot is also fine
+pl.rcParams["figure.figsize"] = (12,7)
 
 from strategy import inverse_bollinger, bollinger, sma
 
@@ -40,7 +43,7 @@ def regex_process(datafiles: list):
     """
     # capture ticker, release date, result, and stage from filename
     pattern = r"\./data\\(.+)_[\d-]+_[\d-]+_([\d-]+)_(.+)_(\d).csv"
-    replacement_pattern = r"\1_\2_\3"
+    replacement_pattern = r"\1_\2_\3_\4"
     simple_names = [re.sub(pattern, replacement_pattern, datafile) for datafile in datafiles]
     meta_data = [list(re.findall(pattern, datafile)[0]) for datafile in datafiles]
     return (meta_data, simple_names)
@@ -68,20 +71,37 @@ def stock_data_init(datafile: str, key_date: str, period, data_output:dict):
     
     return data
 
-def run_experiments(data_output: dict, datafile: str, data, models: list, params: list):
+def run_model(data_output, datafile: str, data, model, param, simplename: str = "", count: int = 0):
     """
-    Runs actual executions!
+    Actual execution
     """
+    # initialize driver & add strategy
+    cerebro = bt.Cerebro(stdstats=False)
+    cerebro.addobserver(bt.observers.BuySell)
+    cerebro.addobserver(bt.observers.Broker)
+    cerebro.addstrategy(model, param)
+    # Add the Data Feed to Cerebro
+    cerebro.adddata(data)
+    cerebro.broker.setcash(10000000)
+    cerebro.run()
+    data_output[datafile].append(cerebro.broker.getvalue()/10000000 - 1)
+    if SAVE_PLOTS:
+        # change backtrader's plot.py's show(self) into "pass"
+        # so that no plots will be displayed
+        img = cerebro.plot()[0][0]
+        img.savefig(f"imgs2/{simplename}_{key_dict[count]}.png")
+
+
+def run_experiments(data_output: dict, datafile: str, data, models: list, params: list, simplename: str = ""):
+    """
+    Runs executions with loops
+    """
+    simplename = datafile if simplename == "" else simplename
+    count = 0
     for j, model in enumerate(models):
         for param in params[j]:
-            # initialize driver & add strategy
-            cerebro = bt.Cerebro()
-            cerebro.addstrategy(model, param)
-            # Add the Data Feed to Cerebro
-            cerebro.adddata(data)
-            cerebro.broker.setcash(10000000)
-            cerebro.run()
-            data_output[datafile].append(cerebro.broker.getvalue()/10000000 - 1)
+            run_model(data_output, datafile, data, model, param, simplename, count)
+            count += 1
 
 def save_result(data_output: list, params: list = [], header: list = []):
     """
@@ -97,11 +117,14 @@ def save_result(data_output: list, params: list = [], header: list = []):
     csv_write.close()
 
 if __name__ == '__main__':
+    SAVE_PLOTS = True
     # setups
     data_output = {}
     datafiles = glob('./data/*_*_*_*_*_*.csv')
+    
     meta_data, simple_names = regex_process(datafiles)
     models = [inverse_bollinger, bollinger, sma]
+    key_dict = ["INV", "BOL05", "BOL20", "SMA"]
     duration = 14 # days, before & after
     params = [[{"period": duration//2, "inner_devfactor": 0.5, "order_ratio": sigma_to_frequency(0.5, 2*duration), "silence": True}],
               [{"period": duration//2, "inner_devfactor": 0.5, "order_ratio": sigma_to_frequency(0.5, 2*duration), "silence": True},
@@ -114,6 +137,6 @@ if __name__ == '__main__':
         data_output[datafile] = meta_data[i] # adds: name, release_date, result, stage
         # meta_data[i][1]: release date of trial
         data = stock_data_init(datafile, meta_data[i][1], period, data_output) # adds: long, short result
-        run_experiments(data_output, datafile, data, models, params)
+        run_experiments(data_output, datafile, data, models, params, simple_names[i])
 
     save_result(data_output)

@@ -55,13 +55,11 @@ class inverse_bollinger(strategy_basic):
         self.dataclose = self.datas[0].close
         # To keep track of pending orders
         self.order = None
-        self.boll_in = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.inner_devfactor, plot=True)
+        self.boll_in = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.inner_devfactor, plot=True, subplot=False)
         # for view purpose only
-        self.boll_out = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.outer_devfactor, plot=True)
-        below_inbot = bt.indicators.CrossDown(self.data.close, self.boll_in.lines.bot)
-        over_intop = bt.indicators.CrossOver(self.data.close, self.boll_in.lines.top)
-        self.buy_signal = over_intop
-        self.sell_signal = below_inbot
+        self.boll_out = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.outer_devfactor, plot=True, subplot=False)
+        self.sell_signal = self.data.close < self.boll_in.lines.bot
+        self.buy_signal = self.data.close > self.boll_in.lines.top
 
     def next(self):
         #self.log('Close, %.2f' % self.dataclose[0])
@@ -99,8 +97,7 @@ class bollinger(strategy_basic):
         ("period", 20),
         ("inner_devfactor", 0.5),
         ("outer_devfactor", 2.0),
-        ("order_ratio", 0.10),
-        ("wait_period", 5)
+        ("order_ratio", 0.10)
     )
     def __init__(self, params = None):
         # ref: https://stackoverflow.com/questions/72273407/can-you-add-parameters-to-backtrader-strategy
@@ -111,13 +108,11 @@ class bollinger(strategy_basic):
         self.dataclose = self.datas[0].close
         # To keep track of pending orders
         self.order = None
-        self.boll_in = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.inner_devfactor, plot=True)
+        self.boll_in = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.inner_devfactor, plot=True, subplot=False)
         # for view purpose only
-        self.boll_out = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.outer_devfactor, plot=True)
-        below_inbot = bt.indicators.CrossDown(self.data.close, self.boll_in.lines.bot)
-        over_intop = bt.indicators.CrossOver(self.data.close, self.boll_in.lines.top)
-        self.sell_signal = over_intop
-        self.buy_signal = below_inbot
+        self.boll_out = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.outer_devfactor, plot=True, subplot=False)
+        self.buy_signal = self.data.close < self.boll_in.lines.bot
+        self.sell_signal = self.data.close > self.boll_in.lines.top
 
     def next(self):
         #self.log('Close, %.2f' % self.dataclose[0])
@@ -152,7 +147,6 @@ class bollinger(strategy_basic):
 class sma(strategy_basic):
     params = (
         ("period", 20),
-        ("wait_period", 5),
         ("order_ratio", 0.10)
     )
     def __init__(self, params = None):
@@ -164,9 +158,9 @@ class sma(strategy_basic):
         self.dataclose = self.datas[0].close
         # To keep track of pending orders
         self.order = None
-        self.sma = bt.indicators.SMA(period=self.p.period)
-        self.sell_signal = bt.indicators.CrossOver(self.data.close, self.sma)
-        self.buy_signal = bt.indicators.CrossDown(self.data.close, self.sma)
+        self.sma = bt.indicators.SMA(period=self.p.period, plot=True, subplot=False)
+        self.sell_signal = self.data.close > self.sma
+        self.buy_signal = self.data.close < self.sma
 
     def next(self):
         #self.log('Close, %.2f' % self.dataclose[0])
@@ -197,5 +191,56 @@ class sma(strategy_basic):
             size = min(pos_size, portion_portforlio)
             if size != 0:
                 self.order = self.sell(price = price, size = size)
+
+# below: trades once-only
+class inverse_bollinger_(inverse_bollinger):
+    def __init__(self, params = None):
+        # ref: https://stackoverflow.com/questions/72273407/can-you-add-parameters-to-backtrader-strategy
+        if params != None:
+            for name, val in params.items():
+                setattr(self.params, name, val)
+        # self.datas: feed to the strategy
+        self.dataclose = self.datas[0].close
+        # To keep track of pending orders
+        self.order = None
+        self.boll_in = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.inner_devfactor, plot=True, subplot=False)
+        # for view purpose only
+        self.boll_out = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.outer_devfactor, plot=True, subplot=False)
+        below_inbot = bt.indicators.CrossDown(self.data.close, self.boll_in.lines.bot, subplot=False)
+        over_intop = bt.indicators.CrossOver(self.data.close, self.boll_in.lines.top, subplot=False)
+        self.buy_signal = over_intop
+        self.sell_signal = below_inbot
+
+class bollinger_(bollinger):
+    def __init__(self, params = None):
+        # ref: https://stackoverflow.com/questions/72273407/can-you-add-parameters-to-backtrader-strategy
+        if params != None:
+            for name, val in params.items():
+                setattr(self.params, name, val)
+        # self.datas: feed to the strategy
+        self.dataclose = self.datas[0].close
+        # To keep track of pending orders
+        self.order = None
+        self.boll_in = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.inner_devfactor, plot=True, subplot=False)
+        # for view purpose only
+        self.boll_out = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.outer_devfactor, plot=True, subplot=False)
+        below_inbot = bt.indicators.CrossDown(self.data.close, self.boll_in.lines.bot, subplot=False)
+        over_intop = bt.indicators.CrossOver(self.data.close, self.boll_in.lines.top, subplot=False)
+        self.sell_signal = over_intop
+        self.buy_signal = below_inbot
+
+class sma_(sma):
+    def __init__(self, params = None):
+        # ref: https://stackoverflow.com/questions/72273407/can-you-add-parameters-to-backtrader-strategy
+        if params != None:
+            for name, val in params.items():
+                setattr(self.params, name, val)
+        # self.datas: feed to the strategy
+        self.dataclose = self.datas[0].close
+        # To keep track of pending orders
+        self.order = None
+        self.sma = bt.indicators.SMA(period=self.p.period, plot=True, subplot=False)
+        self.sell_signal = bt.indicators.CrossOver(self.data.close, self.sma, subplot=False)
+        self.buy_signal = bt.indicators.CrossDown(self.data.close, self.sma, subplot=False)
 
 # direct reference: https://www.backtrader.com/docu/quickstart/quickstart/#google_vignette

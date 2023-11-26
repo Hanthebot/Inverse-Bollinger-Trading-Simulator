@@ -40,3 +40,5 @@
  7. https://algotrading101.com/learn/yfinance-guide/
  8. https://community.backtrader.com/topic/3979/help-with-yahoofinance-data
  9. https://www.backtrader.com/docu/order-creation-execution/order-creation-execution/
+ 10. https://github.com/enzoampil/fastquant/issues/202
+ 11. https://www.backtrader.com/docu/plotting/plotting/
